@@ -1,0 +1,22 @@
+# Learnify-AI Assets
+
+This directory contains static assets used throughout the application.
+
+## Structure
+
+- **images/** - Static images and media files
+- **icons/** - SVG icons and icon assets
+- **styles/** - Theme and styling files
+
+## Images
+
+Store all image assets in the `images/` folder.
+
+## Icons
+
+Store SVG icons and icon files in the `icons/` folder.
+
+## Styles
+
+Central styling configuration including:
+- `theme.css` - Global theme variables and styling
