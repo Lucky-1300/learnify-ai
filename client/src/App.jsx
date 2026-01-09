@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
@@ -8,31 +9,38 @@ import NotFound from "./pages/NotFound";
 
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
+import Loader from "./components/common/Loader";
 
-// ✅ AUTH CHECK
-const isAuthenticated = () => {
-  const token = localStorage.getItem("token");
-  return token && token !== "undefined" && token !== "null";
-};
+import { useAuth } from "./hooks/useAuth";
 
-// ✅ PROTECTED ROUTE
-const ProtectedRoute = ({ children }) => {
-  return isAuthenticated() ? children : <Navigate to="/login" />;
+// ✅ PROTECTED ROUTE - Redirects unauthenticated users to /login
+const ProtectedRoute = ({ children, isAuthenticated, isLoading }) => {
+  if (isLoading) return <Loader />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
+  const { isAuthenticated, loading } = useAuth();
+
+  // ✅ Loading state while checking auth
+  if (loading) {
+    return <Loader />;
+  }
+
   return (
     <>
-      {isAuthenticated() && <Navbar />}
+      {isAuthenticated && <Navbar />}
 
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute isAuthenticated={isAuthenticated} isLoading={loading}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -41,17 +49,23 @@ function App() {
         <Route
           path="/history"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute isAuthenticated={isAuthenticated} isLoading={loading}>
               <History />
             </ProtectedRoute>
           }
         />
 
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        {/* Root redirect - auto-redirect to dashboard if logged in, else to login */}
+        <Route
+          path="/"
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
+        />
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {isAuthenticated() && <Footer />}
+      {isAuthenticated && <Footer />}
     </>
   );
 }

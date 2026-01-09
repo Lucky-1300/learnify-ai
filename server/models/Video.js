@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const videoSchema = new mongoose.Schema(
   {
@@ -6,6 +6,7 @@ const videoSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
     videoUrl: {
       type: String,
@@ -23,6 +24,24 @@ const videoSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    summary: {
+      type: String,
+      default: '',
+    },
+    keyPoints: [
+      {
+        title: String,
+        description: String,
+      },
+    ],
+    quiz: [
+      {
+        _id: mongoose.Schema.Types.ObjectId,
+        questionText: String,
+        options: [String],
+        correctAnswer: String,
+      },
+    ],
     status: {
       type: String,
       enum: ['pending', 'processing', 'completed', 'failed'],
@@ -38,4 +57,7 @@ const videoSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Video', videoSchema);
+// Index for efficient querying
+videoSchema.index({ userId: 1, createdAt: -1 });
+
+export default mongoose.model('Video', videoSchema);

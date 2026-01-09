@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
+import ErrorAlert from "../../components/common/ErrorAlert";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -14,7 +17,10 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -25,66 +31,117 @@ const Login = () => {
     try {
       const data = await loginUser(formData);
 
-      // ✅ SAVE TOKEN
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // ✅ USE AUTH HOOK - Updates both local storage and auth state
+      login(data.token, data.user);
 
-      // ✅ REDIRECT
-      navigate("/dashboard");
+      // ✅ REDIRECT TO DASHBOARD
+      navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      const errorMessage =
+        err.response?.data?.message || "Login failed. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-lg shadow-md w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-center">
-          Login to Learnify AI
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 py-12 px-4">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">
+            Learnify<span className="text-blue-700">AI</span>
+          </h1>
+          <p className="text-gray-600">Welcome back! Login to your account</p>
+        </div>
 
-        {error && <p className="text-red-500 mb-3">{error}</p>}
+        {/* Form Card */}
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          {/* Error Alert */}
+          <ErrorAlert message={error} onClose={() => setError("")} />
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="w-full mb-3 p-2 border rounded"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Input */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:text-gray-500"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                required
+              />
+            </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="w-full mb-4 p-2 border rounded"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+            {/* Password Input */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:text-gray-500"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={loading}
+                required
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
+            </button>
+          </form>
 
-        <p className="mt-4 text-center text-sm">
-          Don’t have an account?{" "}
-          <Link to="/register" className="text-blue-600 underline">
-            Register
-          </Link>
-        </p>
-      </form>
+          {/* Register Link */}
+          <p className="mt-6 text-center text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-blue-600 font-medium hover:underline">
+              Register here
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
