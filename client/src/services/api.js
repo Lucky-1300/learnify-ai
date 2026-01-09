@@ -1,0 +1,34 @@
+import axios from "axios";
+
+const API = axios.create({
+  baseURL: "http://localhost:5000/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// attach token automatically
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const loginUser = async (data) => {
+  const res = await API.post("/auth/login", data);
+  return res.data;
+};
+
+export const registerUser = async (data) => {
+  const res = await API.post("/auth/register", data);
+  return res.data;
+};
+
+export const getAnalysisHistory = async () => {
+  const res = await API.get("/video/history");
+  return res.data;
+};
+
+export default API;
