@@ -1,21 +1,23 @@
-import Video from "../models/Video.js";
 import mongoose from "mongoose";
+import Video from "../models/Video.js";
+import { extractTranscript } from "../services/transcript.service.js";
+import { generateSummary, generateKeyPoints, generateQuiz } from "../services/openai.service.js";
 
 /**
- * Analyze a video and generate summary, keypoints, and quiz
- * In production, this would call the LLM service
+ * Analyze a video and generate summary, keypoints, and quiz using AI
  */
 export const analyzeVideo = async (req, res) => {
   try {
     const { videoUrl, videoTitle } = req.body;
     const userId = req.userId;
+    const hasOpenAI = !!process.env.OPENAI_API_KEY;
+    let usedMock = false;
+    let fallbackReason = "";
 
-    // Validation
     if (!videoUrl) {
       return res.status(400).json({ message: "Video URL is required" });
     }
 
-    // Create video document with pending status
     const video = new Video({
       userId,
       videoUrl,
@@ -25,132 +27,104 @@ export const analyzeVideo = async (req, res) => {
 
     await video.save();
 
-    // In production, this would:
-    // 1. Extract transcript from video
-    // 2. Call LLM to generate summary, keypoints, and quiz
-    // 3. Update video document with results
-    // 4. Send back the analysis
+    console.log("📹 Extracting transcript from video...");
+    let transcript = "";
+    try {
+      transcript = await extractTranscript(videoUrl);
+    } catch (err) {
+      console.warn("Transcript extraction failed:", err.message);
+      fallbackReason = `Transcript extraction failed: ${err.message}`;
+    }
 
-    // For now, return mock data and mark as completed
-    const mockSummary =
-      "This video provides a comprehensive overview of the topic with practical examples and real-world applications.";
+    if (!transcript || transcript.length < 50) {
+      console.warn("Transcript missing/too short. Falling back to mock analysis.");
+      usedMock = true;
+      fallbackReason = fallbackReason || "Transcript missing or too short";
+      const { mockSummary, mockKeyPoints, mockQuiz } = buildMockAnalysis(video.videoTitle);
+      video.summary = mockSummary;
+      video.keyPoints = mockKeyPoints;
+      video.quiz = mockQuiz.map((q) => ({
+        _id: new mongoose.Types.ObjectId(),
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+      }));
+      video.status = "completed";
+      await video.save();
+      return res.status(201).json({
+        ...serializeVideo(video),
+        debug: { usedMock, reason: fallbackReason, transcriptLength: transcript?.length || 0, hasOpenAI },
+      });
+    }
 
-    const mockKeyPoints = [
-      {
-        title: "Understanding the Fundamentals",
-        description:
-          "Learn the core concepts and principles that form the foundation.",
-      },
-      {
-        title: "Practical Applications",
-        description: "Discover how these concepts apply in real-world scenarios.",
-      },
-      {
-        title: "Best Practices",
-        description: "Explore industry-standard practices and methodologies.",
-      },
-      {
-        title: "Common Challenges",
-        description: "Understand common pitfalls and how to avoid them.",
-      },
-      {
-        title: "Future Trends",
-        description: "Learn about emerging trends and future directions.",
-      },
-    ];
+    console.log(`✅ Transcript extracted: ${transcript.length} characters`);
 
-    const mockQuiz = [
-      {
-        _id: new mongoose.Types.ObjectId(),
-        questionText: "What is the primary focus of the video?",
-        options: [
-          "Introduction with practical examples",
-          "Advanced technical details only",
-          "Historical background",
-          "Competitor analysis",
-        ],
-        correctAnswer: "Introduction with practical examples",
-      },
-      {
-        _id: new mongoose.Types.ObjectId(),
-        questionText: "Which concept was emphasized the most?",
-        options: [
-          "Theoretical knowledge",
-          "Practical applications and real-world scenarios",
-          "Historical facts",
-          "Mathematical proofs",
-        ],
-        correctAnswer: "Practical applications and real-world scenarios",
-      },
-      {
-        _id: new mongoose.Types.ObjectId(),
-        questionText: "What are the common challenges mentioned?",
-        options: [
-          "High costs only",
-          "Technical and practical pitfalls to avoid",
-          "Weather-related issues",
-          "Government regulations",
-        ],
-        correctAnswer: "Technical and practical pitfalls to avoid",
-      },
-      {
-        _id: new mongoose.Types.ObjectId(),
-        questionText: "What does the video recommend for further learning?",
-        options: [
-          "Stop learning after this video",
-          "Exploration and practice",
-          "Only theoretical study",
-          "Professional certification only",
-        ],
-        correctAnswer: "Exploration and practice",
-      },
-    ];
+    console.log("🤖 Generating AI analysis...");
+    let summary, keyPoints, quiz;
+    try {
+      if (!hasOpenAI) {
+        throw new Error("OpenAI API key missing");
+      }
+      [summary, keyPoints, quiz] = await Promise.all([
+        generateSummary(transcript, video.videoTitle),
+        generateKeyPoints(transcript, video.videoTitle),
+        generateQuiz(transcript, video.videoTitle),
+      ]);
+      console.log("✅ AI analysis complete");
+    } catch (err) {
+      console.warn("AI generation failed, using mock:", err.message);
+      usedMock = true;
+      fallbackReason = fallbackReason || err.message || "AI generation failed";
+      const mock = buildMockAnalysis(video.videoTitle);
+      summary = mock.mockSummary;
+      keyPoints = mock.mockKeyPoints;
+      quiz = mock.mockQuiz;
+    }
 
-    // Update video with analysis results
-    video.summary = mockSummary;
-    video.keyPoints = mockKeyPoints;
-    video.quiz = mockQuiz;
+    const quizWithIds = (quiz || []).map((q) => ({
+      _id: new mongoose.Types.ObjectId(),
+      questionText: q.questionText,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+    }));
+
+    video.summary = summary;
+    video.keyPoints = keyPoints;
+    video.quiz = quizWithIds;
     video.status = "completed";
 
     await video.save();
 
-    // Return the complete analysis
-    res.status(201).json({
-      _id: video._id,
-      videoUrl: video.videoUrl,
-      videoTitle: video.videoTitle,
-      summary: video.summary,
-      keyPoints: video.keyPoints,
-      quiz: video.quiz,
-      status: video.status,
-      createdAt: video.createdAt,
+    console.log(`✅ Video analysis saved: ${video._id}`);
+    return res.status(201).json({
+      ...serializeVideo(video),
+      debug: { usedMock, reason: fallbackReason || null, transcriptLength: transcript?.length || 0, hasOpenAI },
     });
-  } catch (err) {
-    console.error("VIDEO ANALYSIS ERROR:", err);
-    res.status(500).json({ message: "Failed to analyze video", error: err.message });
+  } catch (error) {
+    console.error("Video analysis error:", error);
+    res.status(500).json({ message: "Failed to analyze video" });
   }
 };
 
 /**
- * Get analysis history for the authenticated user
+ * Get analysis history for authenticated user
  */
 export const getAnalysisHistory = async (req, res) => {
   try {
     const userId = req.userId;
-
     const videos = await Video.find({ userId })
       .sort({ createdAt: -1 })
-      .select("-transcript");
+      .select("-__v");
 
     res.status(200).json(videos);
   } catch (err) {
-    console.error("GET HISTORY ERROR:", err);
+    console.error("HISTORY ERROR:", err);
     res.status(500).json({ message: "Failed to fetch history" });
   }
 };
 
 /**
- * Get a specific video analysis by ID
+ * Get a specific analysis by ID
  */
 export const getVideoAnalysis = async (req, res) => {
   try {
@@ -161,10 +135,7 @@ export const getVideoAnalysis = async (req, res) => {
       return res.status(400).json({ message: "Invalid video ID" });
     }
 
-    const video = await Video.findOne({
-      _id: videoId,
-      userId: userId,
-    });
+    const video = await Video.findOne({ _id: videoId, userId });
 
     if (!video) {
       return res.status(404).json({ message: "Video analysis not found" });
@@ -189,10 +160,7 @@ export const deleteVideoAnalysis = async (req, res) => {
       return res.status(400).json({ message: "Invalid video ID" });
     }
 
-    const video = await Video.findOneAndDelete({
-      _id: videoId,
-      userId: userId,
-    });
+    const video = await Video.findOneAndDelete({ _id: videoId, userId });
 
     if (!video) {
       return res.status(404).json({ message: "Video analysis not found" });
@@ -203,4 +171,34 @@ export const deleteVideoAnalysis = async (req, res) => {
     console.error("DELETE ANALYSIS ERROR:", err);
     res.status(500).json({ message: "Failed to delete analysis" });
   }
+};
+
+// Helpers
+const serializeVideo = (video) => ({
+  _id: video._id,
+  videoUrl: video.videoUrl,
+  videoTitle: video.videoTitle,
+  summary: video.summary,
+  keyPoints: video.keyPoints,
+  quiz: video.quiz,
+  status: video.status,
+  createdAt: video.createdAt,
+});
+
+const buildMockAnalysis = (title = "Untitled Video") => {
+  const mockSummary = `This analysis for "${title}" provides a practical overview with core concepts, real-world examples, and suggested next steps for deeper learning.`;
+  const mockKeyPoints = [
+    { title: "Core Concepts", description: "Understand the main ideas and why they matter." },
+    { title: "Real Examples", description: "See how the ideas apply in everyday scenarios." },
+    { title: "Best Practices", description: "Learn tips to avoid common pitfalls." },
+    { title: "Challenges", description: "Recognize hurdles and strategies to overcome them." },
+    { title: "Next Steps", description: "Suggested directions for practice and exploration." },
+  ];
+  const mockQuiz = [
+    { questionText: "What is emphasized most?", options: ["Theory", "Practical use", "History", "Trivia"], correctAnswer: "Practical use" },
+    { questionText: "Which area helps avoid mistakes?", options: ["Best practices", "Random tips", "Guesswork", "None"], correctAnswer: "Best practices" },
+    { questionText: "What should you consider next?", options: ["Stop learning", "Practice", "Ignore", "Unrelated tasks"], correctAnswer: "Practice" },
+    { questionText: "What do examples illustrate?", options: ["Unrelated facts", "Real scenarios", "Only theory", "Myths"], correctAnswer: "Real scenarios" },
+  ];
+  return { mockSummary, mockKeyPoints, mockQuiz };
 };

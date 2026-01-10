@@ -1,4 +1,5 @@
-# 🎓 Learnify AI
+OPENAI_API_KEY=your-key
+OPENAI_MODEL=gpt-3.5-turbo# 🎓 Learnify AI
 
 An intelligent video learning platform that analyzes video content and generates personalized learning materials including summaries, key points, and interactive quizzes powered by AI.
 
@@ -215,6 +216,30 @@ Before you begin, ensure you have the following installed:
    ```env
    VITE_API_BASE_URL=http://localhost:5000/api
    ```
+
+### AI Configuration (OpenAI)
+
+1. Get an API key from OpenAI and add to `server/.env` (or root `.env` if shared):
+   ```env
+   OPENAI_API_KEY=your-openai-api-key
+   OPENAI_MODEL=gpt-4o-mini   # or gpt-3.5-turbo
+   ```
+
+2. Restart the backend after setting the key:
+   ```bash
+   cd server
+   npm start
+   ```
+
+3. How it works:
+   - The server fetches the YouTube transcript (if captions exist)
+   - Sends transcript to OpenAI to generate summary, key points, and quiz
+   - If transcript or API key is missing, it falls back to a contextual mock analysis
+
+4. Troubleshooting:
+   - No captions / transcript fails → You’ll get a fallback summary and quiz
+   - Missing `OPENAI_API_KEY` → You’ll get a fallback summary and quiz
+   - Rate limits → Retry after a short wait or reduce request frequency
 
 ### Backend Setup
 
@@ -470,10 +495,10 @@ curl -X POST http://localhost:5000/api/auth/register \
   -d '{"email":"test@example.com","password":"password123"}'
 
 # Analyze video
-curl -X POST http://localhost:5000/api/ai/analyze \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -v -X POST http://localhost:5000/api/ai/analyze \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"videoUrl":"https://example.com/video","videoTitle":"My Video"}'
+  -d '{"videoUrl":"<captioned-url>","videoTitle":"Test Video"}'
 ```
 
 **Test with Postman**

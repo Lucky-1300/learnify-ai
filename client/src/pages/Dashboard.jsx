@@ -1,90 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import VideoInput from "../components/video/VideoInput";
 import SummaryCard from "../components/summary/SummaryCard";
 import KeyPointsList from "../components/keypoints/KeyPointsList";
 import QuizContainer from "../components/quiz/QuizContainer";
 import ErrorAlert from "../components/common/ErrorAlert";
-
-// Mock data for demonstration
-const MOCK_ANALYSIS = {
-  summary: `This comprehensive video explores fundamental concepts in modern technology and their real-world applications. 
-
-The video begins with an introduction to key principles, followed by in-depth explanations of core concepts using practical examples. The instructor demonstrates how these concepts apply to everyday scenarios and industry practices.
-
-Key takeaways include understanding the foundational knowledge required for advanced topics, recognizing common patterns and best practices, and appreciating the importance of continuous learning in this rapidly evolving field.
-
-The video concludes with a summary of the main points and suggestions for further exploration and practice.`,
-
-  keyPoints: [
-    {
-      title: "Understanding the Fundamentals",
-      description: "Learn the core concepts and principles that form the foundation of the topic."
-    },
-    {
-      title: "Practical Applications",
-      description: "Discover how these concepts are applied in real-world scenarios and industry practices."
-    },
-    {
-      title: "Best Practices",
-      description: "Explore industry-standard practices and methodologies for optimal results."
-    },
-    {
-      title: "Common Challenges",
-      description: "Understand common pitfalls and how to avoid them."
-    },
-    {
-      title: "Future Trends",
-      description: "Learn about emerging trends and future directions in this field."
-    }
-  ],
-
-  quiz: [
-    {
-      _id: "q1",
-      questionText: "What is the primary focus of the video?",
-      options: [
-        "Introduction to the topic with practical examples",
-        "Advanced technical details only",
-        "Historical background",
-        "Competitor analysis"
-      ],
-      correctAnswer: "Introduction to the topic with practical examples"
-    },
-    {
-      _id: "q2",
-      questionText: "Which concept was emphasized the most?",
-      options: [
-        "Theoretical knowledge",
-        "Practical applications and real-world scenarios",
-        "Historical facts",
-        "Mathematical proofs"
-      ],
-      correctAnswer: "Practical applications and real-world scenarios"
-    },
-    {
-      _id: "q3",
-      questionText: "What are the common challenges mentioned?",
-      options: [
-        "High costs only",
-        "Technical and practical pitfalls to avoid",
-        "Weather-related issues",
-        "Government regulations"
-      ],
-      correctAnswer: "Technical and practical pitfalls to avoid"
-    },
-    {
-      _id: "q4",
-      questionText: "What does the video recommend for further learning?",
-      options: [
-        "Stop learning after this video",
-        "Exploration and practice",
-        "Only theoretical study",
-        "Professional certification only"
-      ],
-      correctAnswer: "Exploration and practice"
-    }
-  ]
-};
+import { analyzeVideo } from "../services/api";
 
 const Dashboard = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -94,29 +14,53 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [analyzed, setAnalyzed] = useState(false);
+  const [status, setStatus] = useState("");
+  const [statusType, setStatusType] = useState("info");
+  const statusTimer = useRef(null);
+
+  const previewData = {
+    title: "Untitled Video",
+    summary:
+      "This analysis for \"Untitled Video\" provides a practical overview with core concepts, real-world examples, and suggested next steps for deeper learning.",
+    keyPoints: ["Core Concepts", "Real Examples", "Best Practices", "Challenges", "Next Steps"],
+    quizQuestion: {
+      prompt: "What is emphasized most?",
+      options: ["Theory", "Practical use", "History", "Trivia"],
+    },
+  };
+
+  const showStatus = (message, type = "info", duration = 4000) => {
+    setStatus(message);
+    setStatusType(type);
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    statusTimer.current = setTimeout(() => setStatus(""), duration);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (statusTimer.current) clearTimeout(statusTimer.current);
+    };
+  }, []);
 
   const handleAnalyze = async (url) => {
     setError("");
     setLoading(true);
     setAnalyzed(false);
+    showStatus("Analyzing video with AI...", "info");
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await analyzeVideo(url, "");
 
-      // For now, use mock data (replace with API call when backend is ready)
-      // const response = await analyzeVideo(url);
-      // setSummary(response.summary);
-      // setKeyPoints(response.keypoints);
-      // setQuiz(response.quiz);
-
-      setSummary(MOCK_ANALYSIS.summary);
-      setKeyPoints(MOCK_ANALYSIS.keyPoints);
-      setQuiz(MOCK_ANALYSIS.quiz);
+      setSummary(response.summary || "");
+      setKeyPoints(response.keyPoints || response.keypoints || []);
+      setQuiz(response.quiz || []);
       setVideoUrl(url);
       setAnalyzed(true);
+      showStatus("Analysis complete", "success");
     } catch (err) {
-      setError(err.message || "Failed to analyze video. Please try again.");
+      const message = err.response?.data?.message || err.message || "Failed to analyze video. Please try again.";
+      setError(message);
+      showStatus("Analysis failed", "error");
       console.error("Analysis error:", err);
     } finally {
       setLoading(false);
@@ -127,44 +71,123 @@ const Dashboard = () => {
     console.log("Quiz completed with answers:", answers);
   };
 
+  const renderPreview = () => {
+    const icons = ["🎯", "📌", "⭐", "💡", "🔑"];
+
+    return (
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg p-8 border border-amber-100">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold">AI</div>
+            <div>
+              <p className="text-sm text-slate-500">Sample analysis</p>
+              <p className="text-lg font-semibold text-slate-900">{previewData.title}</p>
+            </div>
+          </div>
+          <p className="text-slate-700 leading-relaxed">{previewData.summary}</p>
+        </div>
+
+        <div className="bg-slate-900 text-slate-50 rounded-2xl shadow-xl p-8">
+          <p className="text-sm uppercase tracking-wide text-amber-200 mb-3">Key Points</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {previewData.keyPoints.map((point, idx) => (
+              <div key={point} className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700">
+                <span className="text-xl">{icons[idx % icons.length]}</span>
+                <span className="font-semibold text-slate-50">{point}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-100 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm text-slate-500">Quiz</p>
+              <h3 className="text-xl font-semibold text-slate-900">Question 1 of 4</h3>
+            </div>
+            <div className="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-semibold">Example</div>
+          </div>
+
+          <p className="text-lg font-semibold text-slate-900 mb-4">{previewData.quizQuestion.prompt}</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {previewData.quizQuestion.options.map((option) => (
+              <div key={option} className="p-4 border-2 border-slate-200 rounded-xl hover:border-amber-400 transition cursor-pointer">
+                <p className="text-slate-800 font-medium">{option}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mt-6 text-sm text-slate-500">
+            <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700">Previous</span>
+            <span className="px-3 py-1 rounded-full bg-slate-900 text-white">Next</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-10">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-sky-50 px-4 py-12">
+      <div className="max-w-6xl mx-auto">
+        {/* Toast / Status */}
+        {status && (
+          <div
+            className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm transition transform ${
+              statusType === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : statusType === "error"
+                ? "bg-red-50 text-red-800 border border-red-200"
+                : "bg-blue-50 text-blue-800 border border-blue-200"
+            }`}
+          >
+            {status}
+          </div>
+        )}
+
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Video Analysis Dashboard</h1>
-          <p className="text-gray-600">Upload a video to get AI-powered insights, summaries, and assessments</p>
+        <div className="mb-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-semibold shadow-lg shadow-slate-900/10">
+            <span>Video Analysis Dashboard</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">Upload a video to get AI-powered insights, summaries, and assessments</h1>
+          <p className="text-lg text-slate-600 max-w-3xl">Paste any captioned YouTube link (or supported source), then let the AI create a summary, highlight the key points, and build a quick quiz to check understanding.</p>
         </div>
 
         {/* Error Alert */}
         {error && <ErrorAlert message={error} onClose={() => setError("")} />}
 
-        {/* Video Input */}
-        <VideoInput onSubmit={handleAnalyze} loading={loading} />
+        <div className="grid lg:grid-cols-[1.05fr,0.95fr] gap-6 items-start">
+          <div className="space-y-8">
+            <VideoInput onSubmit={handleAnalyze} loading={loading} />
 
-        {/* Results Section */}
-        {analyzed || loading ? (
-          <>
-            {/* Summary */}
-            <SummaryCard summary={summary} loading={loading} />
-
-            {/* Key Points */}
-            <KeyPointsList keypoints={keyPoints} loading={loading} />
-
-            {/* Quiz */}
-            <QuizContainer quiz={quiz} onComplete={handleQuizComplete} loading={loading} />
-          </>
-        ) : (
-          // Empty State
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <svg className="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-2">Ready to analyze?</h3>
-            <p className="text-gray-600">Enter a video URL above to get started with AI-powered analysis</p>
+            {/* Results Section */}
+            {analyzed || loading ? (
+              <div className="space-y-6">
+                <SummaryCard summary={summary} loading={loading} />
+                <KeyPointsList keypoints={keyPoints} loading={loading} />
+                <QuizContainer quiz={quiz} onComplete={handleQuizComplete} loading={loading} />
+              </div>
+            ) : (
+              renderPreview()
+            )}
           </div>
-        )}
+
+          <div className="hidden lg:block">
+            <div className="sticky top-4 bg-slate-900 text-white rounded-2xl shadow-2xl p-8 border border-slate-800">
+              <p className="text-sm uppercase tracking-wide text-amber-200 mb-3">How it works</p>
+              <ul className="space-y-3 text-slate-100">
+                <li className="flex gap-3"><span className="text-amber-300">1.</span><span>Paste a video URL and start analysis.</span></li>
+                <li className="flex gap-3"><span className="text-amber-300">2.</span><span>We pull the transcript and run the AI prompt for summary + key points.</span></li>
+                <li className="flex gap-3"><span className="text-amber-300">3.</span><span>We auto-generate a short quiz to reinforce learning.</span></li>
+                <li className="flex gap-3"><span className="text-amber-300">4.</span><span>Review results, then rerun with another link anytime.</span></li>
+              </ul>
+              <div className="mt-6 flex items-center gap-3 text-sm text-slate-300">
+                <span className="inline-flex h-10 w-10 rounded-full bg-amber-100 text-amber-900 items-center justify-center font-bold">AI</span>
+                <p className="leading-relaxed">Fast, context-aware outputs with graceful fallbacks when transcripts or keys are missing.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

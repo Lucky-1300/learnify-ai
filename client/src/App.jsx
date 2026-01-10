@@ -11,7 +11,7 @@ import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import Loader from "./components/common/Loader";
 
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "./context/AuthContext";
 
 // ✅ PROTECTED ROUTE - Redirects unauthenticated users to /login
 const ProtectedRoute = ({ children, isAuthenticated, isLoading }) => {

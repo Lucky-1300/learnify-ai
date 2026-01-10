@@ -1,23 +1,9 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
-import videoRoutes from "./routes/video.routes.js";
+import app from "./app.js";
 
 dotenv.config();
-
-const app = express();
-
-// middlewares
-app.use(cors());
-app.use(express.json());
-
-// routes
-app.use("/api/auth", authRoutes);
-app.use("/api/video", videoRoutes);
-
-// db + server
+console.log("OpenAI key present:", Boolean(process.env.OPENAI_API_KEY));
 connectDB();
 
 const PORT = process.env.PORT || 5000;
