@@ -70,24 +70,24 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/docs/api" className="text-gray-400 hover:text-white transition">
+                <Link to="/api-docs" className="text-gray-400 hover:text-white transition">
                   API Docs
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/docs/user-manual" className="text-gray-400 hover:text-white transition">
+                <Link to="/user-guide" className="text-gray-400 hover:text-white transition">
                   User Guide
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="text-gray-400 hover:text-white transition">
+                <Link to="/faq" className="text-gray-400 hover:text-white transition">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#support" className="text-gray-400 hover:text-white transition">
+                <Link to="/support" className="text-gray-400 hover:text-white transition">
                   Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

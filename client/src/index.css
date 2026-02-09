@@ -1,1 +1,113 @@
 @import "tailwindcss";
+
+html:not(.dark) body {
+	background-color: #f8f5f0;
+	color: #1f2937;
+}
+
+html:not(.dark) .bg-gradient-to-br {
+	background-image: linear-gradient(135deg, #f8f5f0 0%, #f1f5f9 50%, #eef2ff 100%) !important;
+	background-color: #f8f5f0 !important;
+}
+
+html:not(.dark) .bg-gradient-to-r {
+	background-image: linear-gradient(90deg, #0f172a 0%, #1f2937 100%) !important;
+}
+
+html:not(.dark) .bg-blue-600 {
+	background-color: #1f3a5f !important;
+}
+
+html:not(.dark) .bg-blue-700 {
+	background-color: #162b45 !important;
+}
+
+html:not(.dark) .text-blue-600,
+html:not(.dark) .text-blue-700 {
+	color: #1f3a5f !important;
+}
+
+html:not(.dark) .bg-amber-100,
+html:not(.dark) .bg-amber-200,
+html:not(.dark) .bg-amber-50 {
+	background-color: #f5e7d0 !important;
+}
+
+html.dark body {
+	background-color: #0f172a;
+	color: #e2e8f0;
+}
+
+html.dark .bg-white {
+	background-color: #0b1220 !important;
+}
+
+html.dark .bg-slate-900 {
+	background-color: #0b1220 !important;
+}
+
+html.dark .bg-gradient-to-br,
+html.dark .bg-gradient-to-r {
+	background-image: none !important;
+	background-color: #0f172a !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-slate-800 {
+	color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-gray-600,
+html.dark .text-gray-500 {
+	color: #cbd5e1 !important;
+}
+
+html.dark .text-white {
+	color: #e2e8f0 !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-slate-100,
+html.dark .border-slate-200 {
+	border-color: #1f2937 !important;
+}
+
+html.dark .bg-blue-600,
+html.dark .bg-blue-700 {
+	background-color: #1d4ed8 !important;
+}
+
+html.dark .bg-amber-100,
+html.dark .bg-amber-200,
+html.dark .bg-amber-50 {
+	background-color: #1f2937 !important;
+}
+
+html.dark .bg-red-50,
+html.dark .bg-green-50,
+html.dark .bg-blue-50 {
+	background-color: #111827 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+	background-color: #0b1220 !important;
+	color: #e2e8f0 !important;
+	border-color: #1f2937 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+	color: #94a3b8 !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-slate-50 {
+	background-color: #0f172a !important;
+}

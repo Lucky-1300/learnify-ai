@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learnify AI - Mock Result</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --accent: #3b82f6;
+        --border: #e2e8f0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      header {
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        padding: 24px 20px;
+      }
+      header h1 {
+        margin: 0 0 6px 0;
+        font-size: 24px;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+      }
+      main {
+        max-width: 900px;
+        margin: 24px auto 48px;
+        padding: 0 20px;
+        display: grid;
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+      .card h2 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      ul {
+        margin: 8px 0 0 20px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .grid {
+        display: grid;
+        gap: 10px;
+      }
+      .question {
+        padding: 10px 12px;
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+      }
+      .question strong { color: var(--accent); }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        padding: 16px 0 32px;
+      }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Learnify AI — Mock Result</h1>
+      <p>Demonstration output for mentor review</p>
+      <div class="meta" style="margin-top: 8px;">
+        <span class="badge">Status: Generated</span>
+        <span id="video-title">Video: “Introduction to Python Functions”</span>
+        <span>Duration: 12:45</span>
+        <span>Transcript Source: Auto</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Summary</h2>
+        <p>
+          This lesson explains how Python functions help organize code into reusable blocks.
+          It covers function definitions, parameters, return values, and common best practices.
+          The instructor demonstrates simple examples and emphasizes writing clean, readable
+          code to improve maintainability.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Key Points</h2>
+        <ul>
+          <li>Functions allow reuse and reduce duplication.</li>
+          <li>Use <code>def</code> to define functions with clear names.</li>
+          <li>Parameters pass input values; return sends results back.</li>
+          <li>Default parameters simplify common calls.</li>
+          <li>Docstrings document the purpose and usage.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Quiz (10 Questions)</h2>
+        <div class="grid">
+          <div class="question"><strong>Q1.</strong> What keyword is used to define a function in Python?</div>
+          <div class="question"><strong>Q2.</strong> Why are functions useful in large programs?</div>
+          <div class="question"><strong>Q3.</strong> What is the purpose of a return statement?</div>
+          <div class="question"><strong>Q4.</strong> How do default parameters help users of a function?</div>
+          <div class="question"><strong>Q5.</strong> What is a docstring and where is it placed?</div>
+          <div class="question"><strong>Q6.</strong> How do you pass multiple inputs to a function?</div>
+          <div class="question"><strong>Q7.</strong> What happens if a function has no return statement?</div>
+          <div class="question"><strong>Q8.</strong> What does it mean for a function to be reusable?</div>
+          <div class="question"><strong>Q9.</strong> Why should function names be descriptive?</div>
+          <div class="question"><strong>Q10.</strong> Give one best practice for writing clean functions.</div>
+        </div>
+      </section>
+
+      <section class="card" style="text-align: center;">
+        <a href="/dashboard" class="badge" style="padding: 10px 16px; font-size: 14px;">Go to Dashboard</a>
+        <span style="display: inline-block; width: 10px;"></span>
+        <a href="/feedback" class="badge" style="padding: 10px 16px; font-size: 14px;">Give Feedback</a>
+      </section>
+    </main>
+
+    <footer>
+      Mock page for demonstration. You can share this link after starting the client.
+    </footer>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const videoUrl = params.get("url") || params.get("link") || "";
+      if (videoUrl) {
+        const titleEl = document.getElementById("video-title");
+        const safeUrl = videoUrl.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        titleEl.innerHTML = `Video: <a href="${safeUrl}">${safeUrl}</a>`;
+      }
+    </script>
+  </body>
+</html>

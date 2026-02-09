@@ -45,9 +45,35 @@ const History = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const handleRemove = (id) => {
+    const updated = history.filter((item) => item._id !== id);
+    setHistory(updated);
+    try {
+      localStorage.setItem("mockHistory", JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const handleClearAll = () => {
+    const confirmed = window.confirm("Are you sure you want to clear all history?");
+    if (!confirmed) return;
+    setHistory([]);
+    try {
+      localStorage.removeItem("mockHistory");
+    } catch {
+      // ignore storage errors
+    }
+  };
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        const storedMock = JSON.parse(localStorage.getItem("mockHistory") || "[]");
+        if (storedMock.length > 0) {
+          setHistory(storedMock);
+          return;
+        }
         // Try to fetch from API
         try {
           const data = await getAnalysisHistory();
@@ -79,9 +105,27 @@ const History = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-10">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Analysis History</h1>
-          <p className="text-gray-600">View and manage your previous video analyses</p>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Analysis History</h1>
+            <p className="text-gray-600">View and manage your previous video analyses</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="/dashboard"
+              className="h-11 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition inline-flex items-center"
+            >
+              Back to Dashboard
+            </a>
+            {history.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="h-11 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
+              >
+                Clear History
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Error Alert */}
@@ -126,6 +170,11 @@ const History = () => {
                       <h3 className="text-xl font-bold text-gray-800 mb-1">
                         {item.videoTitle || "Untitled Video"}
                       </h3>
+                      {item.isMock && (
+                        <span className="inline-block text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full mb-2">
+                          Mock Entry
+                        </span>
+                      )}
                       <p className="text-sm text-gray-500">
                         <svg className="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -166,9 +215,20 @@ const History = () => {
                   </div>
 
                   {/* Action Button */}
-                  <button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
-                    View Analysis
-                  </button>
+                  <div className="flex gap-3">
+                    <a
+                      href={`/mock-result.html?url=${encodeURIComponent(item.sourceUrl || "")}`}
+                      className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition text-center"
+                    >
+                      View Analysis
+                    </a>
+                    <button
+                      onClick={() => handleRemove(item._id)}
+                      className="flex-1 py-2 px-4 bg-red-50 hover:bg-red-100 text-red-700 font-medium rounded-lg transition"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               );
             })}

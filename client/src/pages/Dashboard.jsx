@@ -7,6 +7,7 @@ import ErrorAlert from "../components/common/ErrorAlert";
 import { analyzeVideo } from "../services/api";
 
 const Dashboard = () => {
+  const mockMode = true;
   const [videoUrl, setVideoUrl] = useState("");
   const [summary, setSummary] = useState("");
   const [keyPoints, setKeyPoints] = useState([]);
@@ -29,6 +30,52 @@ const Dashboard = () => {
     },
   };
 
+  const buildMockResult = (url) => {
+    let host = "any source";
+    try {
+      host = url ? new URL(url).host.replace(/^www\./, "") : "any source";
+    } catch {
+      host = "any source";
+    }
+    const title = url ? `Shared Video (${host})` : "Untitled Video";
+    const displayUrl = url || "(no link provided)";
+    return {
+      title,
+      summary:
+        `This is a mock analysis for "${title}". Source: ${displayUrl}. The summary highlights core concepts, practical takeaways, and next steps for further learning.`,
+      keyPoints: [
+        "Core Concepts",
+        "Real Examples",
+        "Best Practices",
+        "Common Challenges",
+        "Next Steps",
+        `Source Link: ${displayUrl}`,
+      ],
+      quiz: [
+        {
+          _id: "mock-q1",
+          questionText: "Which area helps avoid mistakes?",
+          options: ["Best practices", "Random tips", "Guesswork", "None"],
+        },
+        {
+          _id: "mock-q2",
+          questionText: "Why are examples included in the analysis?",
+          options: ["To show application", "To add length", "To replace summary", "To avoid structure"],
+        },
+        {
+          _id: "mock-q3",
+          questionText: "What is highlighted as the next step?",
+          options: ["Deeper learning", "Skipping practice", "Ignoring key points", "Guessing answers"],
+        },
+        {
+          _id: "mock-q4",
+          questionText: "What is the main benefit of the summary?",
+          options: ["Quick understanding", "Longer reading", "Unclear points", "No direction"],
+        },
+      ],
+    };
+  };
+
   const showStatus = (message, type = "info", duration = 4000) => {
     setStatus(message);
     setStatusType(type);
@@ -46,10 +93,49 @@ const Dashboard = () => {
     setError("");
     setLoading(true);
     setAnalyzed(false);
-    showStatus("Analyzing video with AI...", "info");
+    showStatus("Mock mode enabled. Showing demo results.", "info");
+
+    if (mockMode) {
+      const mock = buildMockResult(url);
+      const entry = {
+        _id: `mock-${Date.now()}`,
+        videoTitle: mock.title || "Shared Video",
+        summary: mock.summary,
+        createdAt: new Date().toISOString(),
+        keyPoints: mock.keyPoints.length,
+        quizQuestions: mock.quiz.length,
+        sourceUrl: url || "",
+        isMock: true,
+      };
+      try {
+        const existing = JSON.parse(localStorage.getItem("mockHistory") || "[]");
+        localStorage.setItem("mockHistory", JSON.stringify([entry, ...existing].slice(0, 20)));
+      } catch {
+        localStorage.setItem("mockHistory", JSON.stringify([entry]));
+      }
+      const target = `/mock-result.html?url=${encodeURIComponent(url || "")}`;
+      window.location.assign(target);
+      return;
+    }
 
     try {
       const response = await analyzeVideo(url, "");
+
+      const hasData =
+        (response && response.summary) ||
+        (response && (response.keyPoints || response.keypoints) && (response.keyPoints || response.keypoints).length > 0) ||
+        (response && response.quiz && response.quiz.length > 0);
+
+      if (!hasData) {
+        const mock = buildMockResult(url);
+        setSummary(mock.summary);
+        setKeyPoints(mock.keyPoints);
+        setQuiz(mock.quiz);
+        setVideoUrl(url);
+        setAnalyzed(true);
+        showStatus("No API output. Showing mock results.", "info");
+        return;
+      }
 
       setSummary(response.summary || "");
       setKeyPoints(response.keyPoints || response.keypoints || []);
@@ -58,10 +144,15 @@ const Dashboard = () => {
       setAnalyzed(true);
       showStatus("Analysis complete", "success");
     } catch (err) {
-      const message = err.response?.data?.message || err.message || "Failed to analyze video. Please try again.";
-      setError(message);
-      showStatus("Analysis failed", "error");
-      console.error("Analysis error:", err);
+      const mock = buildMockResult(url);
+      setSummary(mock.summary);
+      setKeyPoints(mock.keyPoints);
+      setQuiz(mock.quiz);
+      setVideoUrl(url);
+      setAnalyzed(true);
+      setError("");
+      showStatus("API unavailable. Showing mock results.", "info");
+      console.error("Analysis error (mocked):", err);
     } finally {
       setLoading(false);
     }
@@ -76,15 +167,15 @@ const Dashboard = () => {
 
     return (
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg p-8 border border-amber-100">
+        <div className="bg-slate-900 text-slate-50 rounded-2xl shadow-lg p-8 border border-slate-800">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold">AI</div>
+            <div className="h-10 w-10 rounded-full bg-amber-200 text-slate-900 flex items-center justify-center font-bold">AI</div>
             <div>
-              <p className="text-sm text-slate-500">Sample analysis</p>
-              <p className="text-lg font-semibold text-slate-900">{previewData.title}</p>
+              <p className="text-sm text-slate-300">Sample analysis</p>
+              <p className="text-lg font-semibold text-slate-50">{previewData.title}</p>
             </div>
           </div>
-          <p className="text-slate-700 leading-relaxed">{previewData.summary}</p>
+          <p className="text-slate-200 leading-relaxed">{previewData.summary}</p>
         </div>
 
         <div className="bg-slate-900 text-slate-50 rounded-2xl shadow-xl p-8">

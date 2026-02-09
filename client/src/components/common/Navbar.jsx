@@ -1,9 +1,17 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { logout, user, isAuthenticated } = useAuth();
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
+
+  useEffect(() => {
+    const isDark = theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   // ✅ LOGOUT HANDLER - Clear auth state and redirect
   const handleLogout = () => {
@@ -51,12 +59,59 @@ const Navbar = () => {
           >
             History
           </NavLink>
+
+          <NavLink
+            to="/features"
+            className={({ isActive }) =>
+              `text-sm font-medium transition ${
+                isActive
+                  ? "text-white border-b-2 border-white"
+                  : "text-blue-100 hover:text-white"
+              }`
+            }
+          >
+            Features
+          </NavLink>
+
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              `text-sm font-medium transition ${
+                isActive
+                  ? "text-white border-b-2 border-white"
+                  : "text-blue-100 hover:text-white"
+              }`
+            }
+          >
+            About Us
+          </NavLink>
+
+          <NavLink
+            to="/feedback"
+            className={({ isActive }) =>
+              `text-sm font-medium transition ${
+                isActive
+                  ? "text-white border-b-2 border-white"
+                  : "text-blue-100 hover:text-white"
+              }`
+            }
+          >
+            Feedback
+          </NavLink>
         </div>
       )}
 
       {/* User Info & Logout - Only show when authenticated */}
       {isAuthenticated && (
         <div className="ml-auto flex items-center gap-6">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="px-3 py-2 text-xs font-semibold bg-slate-900/20 text-white rounded-lg border border-white/20 hover:bg-slate-900/30 transition"
+            aria-label="Toggle light and dark mode"
+          >
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </button>
           {user && (
             <span className="text-sm text-blue-100">
               Welcome, <span className="font-semibold text-white">{user.name}</span>
