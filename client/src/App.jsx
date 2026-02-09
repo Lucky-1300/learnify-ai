@@ -53,14 +53,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated} isLoading={loading}>
-              <History />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/history" element={<History />} />
 
         <Route
           path="/features"

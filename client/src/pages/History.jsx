@@ -242,12 +242,9 @@ const History = () => {
             <p className="text-gray-600">No analyses match "{searchTerm}". Try a different search term.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m0 0h6M6 12h6m0 0h6" />
-            </svg>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-2">No Analysis History</h3>
-            <p className="text-gray-600">You haven't analyzed any videos yet. Start by going to the Dashboard.</p>
+          <div className="text-center py-16">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-2">No History</h3>
+            <p className="text-gray-600">There is no history yet.</p>
           </div>
         )}
       </div>
